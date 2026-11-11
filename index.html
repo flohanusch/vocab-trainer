@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Econ Vocab Trainer</title>
+<meta name="description" content="Flashcards for English for Economics vocabulary, with spaced repetition and Anki export.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one narrow study column; tabs on top, the active card or list below */
+:root{
+  color-scheme:light;
+  --bg:#F1F3F7; --surface:#FFFFFF; --ink:#13203B; --muted:#5A6479; --line:#D9DFE8;
+  --accent:#2D58E6; --accent-ink:#FFFFFF; --soft:#E5EBFD;
+  --good:#18805A; --good-soft:#E1F3EA; --again:#C9442A; --again-soft:#FBE7E2;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0E131E; --surface:#161D2C; --ink:#E6EAF2; --muted:#98A2B6; --line:#283247;
+  --accent:#7D9BFF; --accent-ink:#0E131E; --soft:#1C2848;
+  --good:#4CC38A; --good-soft:#15302A; --again:#FF7C5E; --again-soft:#3A1F1A; color-scheme:dark}}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:720px;margin:0 auto;padding-block:calc(20px + env(safe-area-inset-top,0px)) calc(48px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:26px;font-weight:800}
+h2{font-size:19px;font-weight:700}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:13.5px}
+.eyebrow{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 20px}
+.stats{display:flex;gap:18px;flex-wrap:wrap}
+.stat{display:flex;flex-direction:column;align-items:flex-start;min-width:52px}
+.stat b{font-family:var(--f-mono);font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat span{font-size:11.5px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.stat.due b{color:var(--accent)}
+
+nav.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px;overflow-x:auto}
+nav.tabs button{flex:1;border:0;background:none;padding:8px 12px;border-radius:999px;font-weight:600;font-size:14px;cursor:pointer;color:var(--muted);white-space:nowrap}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);padding:4px 11px;border-radius:999px;font-size:13px;cursor:pointer;color:var(--ink)}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--soft);color:var(--accent);font-weight:600}
+.chip .n{font-family:var(--f-mono);font-size:11px;color:var(--muted);margin-left:5px}
+.chip[aria-pressed="true"] .n{color:var(--accent)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.col{display:flex;flex-direction:column;gap:10px}
+.spacer{flex:1}
+
+.btn{border:1px solid var(--line);background:var(--surface);padding:9px 15px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{border-color:transparent;background:none;color:var(--muted);padding-inline:8px}
+.btn.danger{color:var(--again);border-color:var(--again)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn kbd{font-family:var(--f-mono);font-size:11px;opacity:.7;border:1px solid currentColor;border-radius:4px;padding:0 4px}
+
+input[type=text],textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 11px;font-size:16px}
+textarea{resize:vertical;min-height:90px;line-height:1.45}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600;color:var(--muted);flex:1;min-width:0}
+label.f.inline{flex-direction:row;align-items:center;gap:8px;font-weight:500;color:var(--ink);flex:0 0 auto}
+.seg{display:inline-flex;gap:2px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px}
+.seg button{border:0;background:none;padding:5px 11px;border-radius:6px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+code{font-family:var(--f-mono);font-size:12.5px;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:1px 5px;overflow-wrap:anywhere}
+
+/* Flashcard */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.card-top{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px dashed var(--line)}
+.card-body{padding:26px 18px 22px;display:flex;flex-direction:column;gap:18px}
+.prompt{font-family:var(--f-display);font-weight:600;font-size:clamp(20px,4.2vw,26px);line-height:1.3;text-wrap:balance}
+.blank{display:inline-block;border-bottom:2.5px solid var(--accent);min-width:3ch;color:transparent;user-select:none;margin:0 2px}
+.answer-word{font-family:var(--f-display);font-weight:800;font-size:clamp(24px,5vw,32px);color:var(--accent);line-height:1.15}
+.mark{background:var(--soft);color:var(--accent);font-weight:600;padding:0 3px;border-radius:3px}
+.verdict{font-size:13.5px;font-weight:600;padding:5px 10px;border-radius:6px;align-self:flex-start}
+.verdict.ok{background:var(--good-soft);color:var(--good)}
+.verdict.close{background:var(--soft);color:var(--accent)}
+.verdict.no{background:var(--again-soft);color:var(--again)}
+.grades{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grade{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:600}
+.grade small{font-family:var(--f-mono);font-weight:500;font-size:11.5px;color:var(--muted)}
+.grade.again{color:var(--again)} .grade.again:hover{background:var(--again-soft);border-color:var(--again)}
+.grade.good{color:var(--good)} .grade.good:hover{background:var(--good-soft);border-color:var(--good)}
+.grade.easy{color:var(--accent)} .grade.easy:hover{background:var(--soft);border-color:var(--accent)}
+.progress{height:4px;background:var(--line);border-radius:4px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);transition:width .25s}
+
+/* Leitner box meter: six bars, one per box */
+.boxes{display:inline-flex;gap:2px;align-items:flex-end;height:14px}
+.boxes i{width:4px;background:var(--line);border-radius:1px}
+.boxes i:nth-child(1){height:5px}.boxes i:nth-child(2){height:6.8px}.boxes i:nth-child(3){height:8.6px}
+.boxes i:nth-child(4){height:10.4px}.boxes i:nth-child(5){height:12.2px}.boxes i:nth-child(6){height:14px}
+.boxes i.on{background:var(--good)}
+
+/* Word list */
+.list{display:flex;flex-direction:column}
+.item{border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.item-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 14px;align-items:center;padding:11px 2px;cursor:pointer;width:100%;background:none;border:0;text-align:left}
+.item-head strong{font-weight:600}
+.item-head .def{grid-column:1;color:var(--muted);font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item-head .boxes{grid-row:1 / span 2;grid-column:2}
+.editor{padding:4px 2px 16px;display:flex;flex-direction:column;gap:10px}
+
+.empty{text-align:center;padding:34px 12px;display:flex;flex-direction:column;gap:10px;align-items:center}
+.empty p{max-width:44ch}
+.wordchips{display:flex;gap:8px;flex-wrap:wrap}
+.wordchip{font-family:var(--f-display);font-weight:700;font-size:16px;background:var(--soft);color:var(--accent);padding:5px 12px;border-radius:8px}
+.wordchip.used{background:var(--good-soft);color:var(--good)}
+.mic[aria-pressed="true"]{background:var(--again);border-color:var(--again);color:#fff}
+.interim{font-size:13px;color:var(--muted);font-style:italic;min-height:1.2em}
+ol.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;color:var(--muted);font-size:14px}
+ol.steps b{color:var(--ink);font-weight:600}
+.notice{background:var(--again-soft);color:var(--again);border-radius:8px;padding:10px 14px;font-size:14px}
+hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;font-weight:500;max-width:calc(100% - 40px);z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+@media (max-width:480px){ .card-body{padding:22px 14px 18px} .panel{padding:14px} .stats{gap:14px} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">English for Economics</div>
+      <h1>Econ Vocab Trainer</h1>
+    </div>
+    <div class="stats" aria-live="polite">
+      <div class="stat due"><b id="sDue">0</b><span>Due</span></div>
+      <div class="stat"><b id="sNew">0</b><span>New</span></div>
+      <div class="stat"><b id="sLearned">0</b><span>Learned</span></div>
+      <div class="stat"><b id="sTotal">0</b><span>Words</span></div>
+    </div>
+  </header>
+
+  <div class="notice" id="noStorage" hidden>This browser isn't saving data (private window?). Your progress will be lost when you close the tab.</div>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-view="practice" aria-selected="true">Practice</button>
+    <button role="tab" data-view="words" aria-selected="false">Words</button>
+    <button role="tab" data-view="use" aria-selected="false">Use it</button>
+    <button role="tab" data-view="export" aria-selected="false">Anki &amp; backup</button>
+  </nav>
+
+  <div class="chips" id="topics" aria-label="Topic"></div>
+
+  <!-- PRACTICE -->
+  <section id="v-practice"><div id="practice"></div></section>
+
+  <!-- WORDS -->
+  <section id="v-words" class="stack" hidden>
+    <div class="panel">
+      <div class="row"><h2>Add words</h2><span class="spacer"></span>
+        <div class="seg" role="group" aria-label="How to add">
+          <button type="button" data-add="paste" aria-pressed="true">Paste list</button>
+          <button type="button" data-add="single" aria-pressed="false">Single word</button>
+        </div></div>
+
+      <div id="addPaste" class="col">
+        <ol class="steps">
+          <li>Type your new words below, one per line, and click <b>Copy prompt for Claude</b>.</li>
+          <li>Paste it into a Claude chat. Claude answers with one line per word.</li>
+          <li>Paste Claude's answer back in here (replacing your list) and click <b>Add words</b>.</li>
+        </ol>
+        <label class="f" for="bulk">Words, or finished lines in the format <span class="mono">word | definition | example with [[word]]</span>
+          <textarea id="bulk" rows="6" placeholder="wage-price spiral&#10;fiscal headroom&#10;&#10;or:&#10;curb | to limit or control something | Higher rates are meant to [[curb]] demand."></textarea></label>
+        <div class="row">
+          <label class="f" for="bulkTopic" style="min-width:200px">Topic
+            <input type="text" id="bulkTopic" list="topicList" placeholder="e.g. Gender pay gap"></label>
+        </div>
+        <datalist id="topicList"></datalist>
+        <div class="row">
+          <button class="btn" id="copyPrompt" type="button">Copy prompt for Claude</button>
+          <button class="btn primary" id="bulkAdd" type="button">Add words</button>
+          <span class="muted small" id="bulkStatus"></span>
+        </div>
+      </div>
+
+      <div id="addSingle" class="col" hidden>
+        <div class="row">
+          <label class="f" for="mWord">Word<input type="text" id="mWord"></label>
+          <label class="f" for="mTopic">Topic<input type="text" id="mTopic" list="topicList"></label>
+        </div>
+        <label class="f" for="mDef">Definition<input type="text" id="mDef"></label>
+        <label class="f" for="mEx">Example sentence (put the word in [[double brackets]])
+          <input type="text" id="mEx" placeholder="The central bank raised rates to [[curb]] inflation."></label>
+        <div class="row"><button class="btn primary" id="singleAdd" type="button">Add word</button></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="row">
+        <input type="text" id="q" placeholder="Search words and definitions" aria-label="Search" style="flex:1;min-width:160px">
+        <span class="muted mono" id="listCount" style="font-size:13px"></span>
+      </div>
+      <div class="list" id="list"></div>
+    </div>
+  </section>
+
+  <!-- USE IT -->
+  <section id="v-use" hidden>
+    <div class="panel">
+      <div class="row"><span class="eyebrow" id="useTopic">Oral exam practice</span><span class="spacer"></span>
+        <button class="btn" id="useNew" type="button">New question</button></div>
+      <h2 id="useQ" style="font-size:21px"></h2>
+      <div>
+        <div class="eyebrow" style="margin-bottom:6px">Use these words</div>
+        <div class="wordchips" id="useWords"></div>
+      </div>
+      <label class="f" for="useAns">Your answer, as you would say it in the exam
+        <textarea id="useAns" rows="5" placeholder="In my opinion…"></textarea></label>
+      <div class="interim" id="interim"></div>
+      <div class="row">
+        <button class="btn mic" id="micBtn" type="button" aria-pressed="false" hidden>Speak</button>
+        <button class="btn primary" id="useCopy" type="button">Copy for Claude feedback</button>
+      </div>
+      <p class="muted small">Words turn green once they're in your answer. For feedback, paste the copied text into a Claude chat.</p>
+    </div>
+  </section>
+
+  <!-- EXPORT & BACKUP -->
+  <section id="v-export" class="stack" hidden>
+    <div class="panel">
+      <h2>Send words to Anki</h2>
+      <p class="muted">Each word becomes a Basic card (definition on the front, word on the back) and a Cloze card (the example sentence with the word hidden).</p>
+      <label class="f" for="deckName">Deck<input type="text" id="deckName" value="English for Economics"></label>
+      <div class="row">
+        <label class="f" for="ntBasic">Basic note type name<input type="text" id="ntBasic" value="Basic"></label>
+        <label class="f" for="ntCloze">Cloze note type name<input type="text" id="ntCloze" value="Cloze"></label>
+      </div>
+      <p class="muted small">German Anki uses <b>Einfach</b> and <b>Lückentext</b>. Type the names exactly as they appear in your Anki.</p>
+      <div class="row">
+        <label class="f inline" for="onlyNew"><input type="checkbox" id="onlyNew" checked> Only words not exported yet</label>
+        <label class="f inline" for="exBasic"><input type="checkbox" id="exBasic" checked> Basic</label>
+        <label class="f inline" for="exCloze"><input type="checkbox" id="exCloze" checked> Cloze</label>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="exportBtn" type="button">Download Anki file</button>
+        <span class="muted mono" id="exportCount" style="font-size:13px"></span>
+      </div>
+      <ol class="steps">
+        <li>In Anki: <b>File → Import</b>, pick the downloaded .txt file.</li>
+        <li>Anki reads the deck, note types and tags from the file. Click <b>Import</b>.</li>
+        <li>Needs Anki 2.1.55 or newer. Topics arrive as tags like <b>EnglishEcon::Labour_market</b>.</li>
+      </ol>
+    </div>
+
+    <div class="panel">
+      <h2>Backup</h2>
+      <p class="muted">Your words and progress are saved in this browser only. Download a backup to keep them safe or to move them to your phone or another computer.</p>
+      <div class="row">
+        <button class="btn" id="backupBtn" type="button">Download backup</button>
+        <label class="btn" for="restoreFile" style="cursor:pointer">Load backup…</label>
+        <input type="file" id="restoreFile" accept=".json,application/json" hidden>
+      </div>
+      <div id="restoreConfirm" class="row" hidden>
+        <span class="small" id="restoreMsg"></span>
+        <button class="btn danger" id="restoreYes" type="button">Replace</button>
+        <button class="btn ghost" id="restoreNo" type="button">Cancel</button>
+      </div>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+(() => {
+const SEED = {"faring":{"word":"faring","definition":"performing, doing or getting along in a particular way","example":"The UK economy is [[faring]] better than France and Germany.","topic":"Ben Chu article","box":0,"due":0,"reps":0,"exported":false,"created":1794410631545},"clip":{"word":"clip","definition":"speed or pace","example":"The US economy is still growing at a respectable [[clip]].","topic":"Ben Chu article","box":0,"due":0,"reps":0,"exported":false,"created":1794410631546},"swathe":{"word":"swathe","definition":"a large number or a wide range of something","example":"The White House announced a [[swathe]] of new tariffs in April.","topic":"Ben Chu article","box":0,"due":0,"reps":0,"exported":false,"created":1794410631547},"think-tank":{"word":"think tank","definition":"an organisation of experts that researches political, economic or social issues","example":"A Washington [[think tank]] estimated how the tariffs affect each income group.","topic":"Ben Chu article","box":0,"due":0,"reps":0,"exported":false,"created":1794410631548},"bridge-the-deficit":{"word":"bridge the deficit","definition":"to close the gap between what a government spends and what it earns","example":"Tariff revenue alone will not [[bridge the deficit]].","topic":"Ben Chu article","box":0,"due":0,"reps":0,"exported":false,"created":1794410631549},"consumer-price-inflation":{"word":"consumer price inflation","definition":"the rate at which the prices of goods and services bought by households rise","example":"US [[consumer price inflation]] rose to 3.7% in September.","topic":"Ben Chu article","box":0,"due":0,"reps":0,"exported":false,"created":1794410631550},"ease-tariffs":{"word":"ease tariffs","definition":"to reduce taxes on imported goods","example":"Washington agreed to [[ease tariffs]] on Canadian steel.","topic":"Ben Chu article","box":0,"due":0,"reps":0,"exported":false,"created":1794410631551},"domestic-growth":{"word":"domestic growth","definition":"growth of a country's own economy, inside its borders","example":"Strong consumer spending has supported [[domestic growth]] this year.","topic":"Ben Chu article","box":0,"due":0,"reps":0,"exported":false,"created":1794410631552},"annualized-rate":{"word":"annualized rate","definition":"a figure for a shorter period converted into what it would be over a full year","example":"GDP grew at an [[annualized rate]] of 3.8% in the second quarter.","topic":"Ben Chu article","box":0,"due":0,"reps":0,"exported":false,"created":1794410631553},"immigration-crackdown":{"word":"immigration crackdown","definition":"strict government measures to reduce immigration","example":"The [[immigration crackdown]] has shrunk the US labour force.","topic":"Ben Chu article","box":0,"due":0,"reps":0,"exported":false,"created":1794410631554},"excessive-borrowing":{"word":"excessive borrowing","definition":"borrowing more money than can be paid back safely","example":"Investors worry that [[excessive borrowing]] will push up bond yields.","topic":"Ben Chu article","box":0,"due":0,"reps":0,"exported":false,"created":1794410631555},"corporate-investment":{"word":"corporate investment","definition":"money that companies spend on equipment, buildings and technology","example":"The AI boom has driven a surge in [[corporate investment]] in data centres.","topic":"Ben Chu article","box":0,"due":0,"reps":0,"exported":false,"created":1794410631556},"government-subsidies":{"word":"government subsidies","definition":"money the state pays to support an industry or lower its prices","example":"[[Government subsidies]] helped domestic chip makers expand.","topic":"Ben Chu article","box":0,"due":0,"reps":0,"exported":false,"created":1794410631557},"boost-incomes":{"word":"boost incomes","definition":"to raise the amount of money people earn","example":"Tax cuts were supposed to [[boost incomes]] for middle-class families.","topic":"Ben Chu article","box":0,"due":0,"reps":0,"exported":false,"created":1794410631558},"push-up-inflation":{"word":"push up inflation","definition":"to make prices rise faster","example":"Higher energy costs could [[push up inflation]] next year.","topic":"Ben Chu article","box":0,"due":0,"reps":0,"exported":false,"created":1794410631559},"falter":{"word":"falter","definition":"to lose strength or momentum and slow down","example":"The economy could [[falter]] if spending on AI dries up.","topic":"Ben Chu article","box":0,"due":0,"reps":0,"exported":false,"created":1794410631560},"fluctuate":{"word":"fluctuate","definition":"to rise and fall irregularly","example":"Bond yields [[fluctuated]] sharply throughout 2025.","topic":"Describing graphs","box":0,"due":0,"reps":0,"exported":false,"created":1794410631561},"plummet":{"word":"plummet","definition":"to fall very quickly and suddenly","example":"Inflation [[plummeted]] to almost zero in 2020.","topic":"Describing graphs","box":0,"due":0,"reps":0,"exported":false,"created":1794410631562},"level-off":{"word":"level off","definition":"to stop rising or falling and stay at about the same level","example":"Spending [[levelled off]] at just over $3bn a month.","topic":"Describing graphs","box":0,"due":0,"reps":0,"exported":false,"created":1794410631563},"peak":{"word":"peak","definition":"to reach the highest point","example":"Inflation [[peaked]] at around 9% in mid-2022.","topic":"Describing graphs","box":0,"due":0,"reps":0,"exported":false,"created":1794410631564},"bottom-out":{"word":"bottom out","definition":"to reach the lowest point before starting to rise again","example":"Ten-year yields [[bottomed out]] below 1% in 2020.","topic":"Describing graphs","box":0,"due":0,"reps":0,"exported":false,"created":1794410631565},"percentage-point":{"word":"percentage point","definition":"the unit for the difference between two percentages","example":"Inflation rose from 3% to 3.7%, an increase of 0.7 [[percentage points]].","topic":"Describing graphs","box":0,"due":0,"reps":0,"exported":false,"created":1794410631566},"year-on-year":{"word":"year on year","definition":"compared with the same period one year earlier","example":"Prices rose 3.7% [[year on year]] in September.","topic":"Describing graphs","box":0,"due":0,"reps":0,"exported":false,"created":1794410631567},"inflation-adjusted":{"word":"inflation-adjusted","definition":"changed to remove the effect of rising prices, so different years can be compared","example":"The chart shows spending in [[inflation-adjusted]] dollars.","topic":"Describing graphs","box":0,"due":0,"reps":0,"exported":false,"created":1794410631568},"outperform":{"word":"outperform","definition":"to do better than others","example":"The US economy [[outperformed]] the rest of the G7.","topic":"Describing graphs","box":0,"due":0,"reps":0,"exported":false,"created":1794410631569},"lag-behind":{"word":"lag behind","definition":"to be slower or less successful than others","example":"France continues to [[lag behind]] its G7 peers.","topic":"Describing graphs","box":0,"due":0,"reps":0,"exported":false,"created":1794410631570},"disinflation":{"word":"disinflation","definition":"a slowdown in the rate of inflation while prices are still rising","example":"Falling inflation is [[disinflation]], not deflation: prices are still going up, just more slowly.","topic":"Describing graphs","box":0,"due":0,"reps":0,"exported":false,"created":1794410631571},"correlation-does-not-imply-causation":{"word":"correlation does not imply causation","definition":"two things happening together does not prove that one caused the other","example":"Both lines rose after the election, but [[correlation does not imply causation]].","topic":"Describing graphs","box":0,"due":0,"reps":0,"exported":false,"created":1794410631572},"purchasing-power":{"word":"purchasing power","definition":"the amount of goods and services that a sum of money can buy","example":"High inflation erodes the [[purchasing power]] of workers' wages.","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631573},"cost-of-living":{"word":"cost of living","definition":"the amount of money needed to pay for basic things like housing, food and energy","example":"Rising rents have driven up the [[cost of living]] in big cities.","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631574},"deflation":{"word":"deflation","definition":"a general fall in the level of prices","example":"Japan struggled with [[deflation]] for most of the 1990s and 2000s.","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631575},"price-stability":{"word":"price stability","definition":"a situation in which inflation stays low and steady","example":"The ECB's main goal is [[price stability]].","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631576},"inflationary-pressures":{"word":"inflationary pressures","definition":"forces in the economy that push prices up","example":"Wage growth is adding to [[inflationary pressures]].","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631577},"key-interest-rate":{"word":"key interest rate","definition":"the main interest rate set by a central bank","example":"The ECB left its [[key interest rate]] unchanged at 2%.","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631578},"monetarism":{"word":"monetarism","definition":"an economic theory that says the money supply is the main driver of inflation, so central banks should control it","example":"Following the ideas of [[monetarism]], the central bank cut the money supply to bring inflation down.","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631579},"credibility":{"word":"credibility","definition":"the trust people have that a central bank will do what it says","example":"If the Fed loses its [[credibility]], inflation expectations could rise.","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631580},"recognition-lag":{"word":"recognition lag","definition":"the delay between a problem appearing in the economy and policymakers noticing it","example":"Due to the [[recognition lag]], the central bank only noticed the rise in prices weeks later.","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631581},"implementation-lag":{"word":"implementation lag","definition":"the delay between deciding on a policy and actually putting it into action","example":"Because of the [[implementation lag]], the stimulus only reached households a year later.","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631582},"hike-rates":{"word":"hike rates","definition":"to raise interest rates","example":"The ECB is expected to [[hike rates]] next month.","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631583},"stubbornly-high":{"word":"stubbornly high","definition":"staying high and refusing to come down, even though people try to lower it","example":"Inflation remains [[stubbornly high]] despite several rate hikes.","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631584},"fight-inflation":{"word":"fight inflation","definition":"to take action to bring rising prices back under control","example":"The central bank raised rates to [[fight inflation]].","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631585},"upward-pressure-on-prices":{"word":"upward pressure on prices","definition":"a force that pushes prices higher, such as higher wages or energy costs","example":"Rising energy costs are putting [[upward pressure on prices]].","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631586},"curb":{"word":"curb","definition":"to limit or control something","example":"Higher interest rates are meant to [[curb]] demand.","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631587},"spur":{"word":"spur","definition":"to encourage something and make it happen faster","example":"The government hopes tax cuts will [[spur]] growth.","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631588},"stifle":{"word":"stifle","definition":"to stop something from developing or growing","example":"Critics argue that the debt brake has [[stifled]] public investment.","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631589},"dual-mandate":{"word":"dual mandate","definition":"the Federal Reserve's two goals: maximum employment and stable prices","example":"Under its [[dual mandate]], the Fed has to balance jobs against inflation.","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631590},"monetary-policy-tools":{"word":"monetary policy tools","definition":"the instruments a central bank uses to influence interest rates and the money supply","example":"The key interest rate is the most important of the Fed's [[monetary policy tools]].","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631591},"policymakers":{"word":"policymakers","definition":"the people in governments and institutions such as central banks who decide on economic policy","example":"[[Policymakers]] are worried that the economy is slowing down.","topic":"Inflation & monetary policy","box":0,"due":0,"reps":0,"exported":false,"created":1794410631592},"fiscal-policy":{"word":"fiscal policy","definition":"the way a government uses spending and taxes to influence the economy","example":"Germany has used [[fiscal policy]] to support the economy during the energy crisis.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631593},"expansionary-fiscal-policy":{"word":"expansionary fiscal policy","definition":"when a government increases spending or cuts taxes to boost demand, usually in a recession","example":"To fight the recession, the government adopted an [[expansionary fiscal policy]].","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631594},"contractionary-fiscal-policy":{"word":"contractionary fiscal policy","definition":"when a government cuts spending or raises taxes to cool down the economy or curb inflation","example":"With inflation rising quickly, the minister announced a [[contractionary fiscal policy]].","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631595},"transfer-payments":{"word":"transfer payments","definition":"money the government pays to people without receiving goods or services in return, such as pensions or benefits","example":"Pensions and unemployment benefits are the largest [[transfer payments]].","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631596},"discretionary-government-spending":{"word":"discretionary government spending","definition":"spending that politicians decide on each year, rather than spending fixed by law","example":"Defence is a large part of [[discretionary government spending]].","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631597},"tax-revenues":{"word":"tax revenues","definition":"the money a government collects from taxes","example":"[[Tax revenues]] fell sharply during the recession.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631598},"budget-deficit":{"word":"budget deficit","definition":"when a government spends more than it receives in a year","example":"The US [[budget deficit]] is around 6% of GDP.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631599},"budget-surplus":{"word":"budget surplus","definition":"when a government receives more than it spends in a year","example":"Few countries have run a [[budget surplus]] since the pandemic.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631600},"balanced-budget":{"word":"balanced budget","definition":"a budget in which spending equals income","example":"The finance minister promised a [[balanced budget]] by 2028.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631601},"issue-bonds":{"word":"issue bonds","definition":"to borrow money by selling bonds to investors","example":"The government will [[issue bonds]] to pay for new infrastructure.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631602},"borrowing-costs":{"word":"borrowing costs","definition":"the interest that has to be paid on borrowed money","example":"Higher bond yields mean higher [[borrowing costs]] for the government.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631603},"credit-rating":{"word":"credit rating","definition":"an assessment of how likely a borrower is to pay back its debts","example":"The agency cut the country's [[credit rating]] after the budget crisis.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631604},"service-debt":{"word":"service debt","definition":"to pay the interest and repayments on a debt","example":"Rising rates make it harder for governments to [[service debt]].","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631605},"default":{"word":"default","definition":"to fail to pay back a debt","example":"Investors feared the country would [[default]] on its loans.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631606},"aggregate-demand":{"word":"aggregate demand","definition":"the total demand for goods and services in an economy","example":"If you raise the interest rate, [[aggregate demand]] falls.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631607},"countercyclically":{"word":"countercyclically","definition":"in a way that works against the current direction of the business cycle","example":"Governments should spend [[countercyclically]]: more in downturns, less in booms.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631608},"overheating":{"word":"overheating","definition":"when an economy grows so fast that inflation starts to rise","example":"Low unemployment and rising wages are signs of an [[overheating]] economy.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631609},"stagnation":{"word":"stagnation","definition":"a long period with little or no economic growth","example":"Europe faces years of [[stagnation]] if investment stays weak.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631610},"supply-side-economics":{"word":"supply-side economics","definition":"the theory that lower taxes and less regulation for producers lead to growth","example":"The tax cuts were justified with [[supply-side economics]].","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631611},"keynesian-economics":{"word":"Keynesian economics","definition":"the theory that governments should spend more to boost demand during downturns","example":"[[Keynesian economics]] argues for stimulus spending in a recession.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631612},"deregulation":{"word":"deregulation","definition":"removing or reducing government rules for businesses to increase competition","example":"The [[deregulation]] of the airline industry led to lower ticket prices.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631613},"incentives":{"word":"incentives","definition":"things such as money or tax breaks that motivate people or businesses to act","example":"The government offers tax [[incentives]] to encourage investment in renewable energy.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631614},"government-intervention":{"word":"government intervention","definition":"action by the state to influence markets or the economy","example":"Some economists argue that more [[government intervention]] is needed in the housing market.","topic":"Fiscal policy & public finance","box":0,"due":0,"reps":0,"exported":false,"created":1794410631615},"labour-force":{"word":"labour force","definition":"all people of working age who are employed or actively looking for work","example":"The [[labour force]] has shrunk as older workers retire.","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631616},"labour-force-participation-rate":{"word":"labour force participation rate","definition":"the percentage of the working-age population that is part of the labour force","example":"The [[labour force participation rate]] for women has risen steadily.","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631617},"cyclical-unemployment":{"word":"cyclical unemployment","definition":"job losses caused by a weak economy when demand falls in a recession","example":"A car factory laying off workers in a downturn is an example of [[cyclical unemployment]].","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631618},"structural-unemployment":{"word":"structural unemployment","definition":"unemployment caused by a mismatch between workers' skills or location and the jobs available","example":"Automation could lead to more [[structural unemployment]] in manufacturing.","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631619},"frictional-unemployment":{"word":"frictional unemployment","definition":"the short time people spend between jobs or looking for their first job","example":"A graduate searching for two months is in [[frictional unemployment]].","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631620},"seasonal-unemployment":{"word":"seasonal unemployment","definition":"job losses at certain times of the year because demand changes with the season","example":"Ski instructors face [[seasonal unemployment]] in summer.","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631621},"tight-labour-market":{"word":"tight labour market","definition":"a situation with more job openings than available workers","example":"In a [[tight labour market]], employers have to raise wages to attract staff.","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631622},"rigid-labour-market":{"word":"rigid labour market","definition":"a labour market where hiring, firing and wage changes are difficult","example":"Critics say a [[rigid labour market]] discourages companies from hiring.","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631623},"gig-economy":{"word":"gig economy","definition":"a labour market of short-term, freelance jobs, often found through apps","example":"Delivery riders in the [[gig economy]] often have no sick pay.","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631624},"blue-collar-workers":{"word":"blue-collar workers","definition":"people who do manual or industrial work","example":"Tariffs were meant to protect [[blue-collar workers]] in manufacturing.","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631625},"minimum-wage":{"word":"minimum wage","definition":"the lowest hourly pay that employers are legally allowed to pay","example":"Germany raised its [[minimum wage]] again this year.","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631626},"demographics":{"word":"demographics","definition":"the characteristics of a population, such as age and size","example":"Ageing [[demographics]] mean fewer workers will support more pensioners.","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631627},"turnover":{"word":"turnover","definition":"the rate at which workers leave a company and have to be replaced","example":"Retail and hospitality have high staff [[turnover]].","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631628},"lay-off":{"word":"lay off","definition":"to end someone's job because there is not enough work, not because they did something wrong","example":"The firm plans to [[lay off]] 500 workers.","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631629},"make-redundant":{"word":"make redundant","definition":"(formal, British) to end someone's job because it is no longer needed","example":"Two hundred employees were [[made redundant]] after the merger.","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631630},"low-hire-low-fire":{"word":"low hire, low fire","definition":"a labour market where companies hire few new workers but also lay off few","example":"In a [[low hire, low fire]] market, it's hard to find a job once you lose one.","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631631},"leverage":{"word":"leverage","definition":"the power to influence a negotiation","example":"Individual workers have little [[leverage]] when they negotiate pay.","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631632},"jobless-benefits":{"word":"jobless benefits","definition":"money paid by the state to people who have lost their jobs","example":"Claims for [[jobless benefits]] rose last week.","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631633},"non-farm-payrolls":{"word":"non-farm payrolls","definition":"the monthly US figure for the number of jobs added outside agriculture","example":"[[Non-farm payrolls]] increased by only 29,000 in September.","topic":"Labour market","box":0,"due":0,"reps":0,"exported":false,"created":1794410631634},"collective-bargaining":{"word":"collective bargaining","definition":"negotiations between a union and an employer about pay and working conditions","example":"[[Collective bargaining]] gives workers more power than negotiating alone.","topic":"Labour unions","box":0,"due":0,"reps":0,"exported":false,"created":1794410631635},"collective-agreement":{"word":"collective agreement","definition":"the contract that results from negotiations between a union and employers (Tarifvertrag)","example":"The new [[collective agreement]] includes a 5% pay rise.","topic":"Labour unions","box":0,"due":0,"reps":0,"exported":false,"created":1794410631636},"industrial-action":{"word":"industrial action","definition":"action such as a strike that workers take as a form of protest","example":"Train drivers have threatened [[industrial action]] over pay.","topic":"Labour unions","box":0,"due":0,"reps":0,"exported":false,"created":1794410631637},"union-density":{"word":"union density","definition":"the percentage of workers who are members of a union","example":"[[Union density]] has fallen in most rich countries since the 1980s.","topic":"Labour unions","box":0,"due":0,"reps":0,"exported":false,"created":1794410631638},"works-council":{"word":"works council","definition":"a group elected by employees to represent them inside a company (Betriebsrat)","example":"The [[works council]] must be consulted before layoffs.","topic":"Labour unions","box":0,"due":0,"reps":0,"exported":false,"created":1794410631639},"co-determination":{"word":"co-determination","definition":"the right of workers to take part in company decisions (Mitbestimmung)","example":"German [[co-determination]] gives employees seats on supervisory boards.","topic":"Labour unions","box":0,"due":0,"reps":0,"exported":false,"created":1794410631640},"wage-price-spiral":{"word":"wage-price spiral","definition":"a cycle in which higher wages lead to higher prices, which lead to demands for higher wages","example":"Central banks fear that big pay rises could start a [[wage-price spiral]].","topic":"Labour unions","box":0,"due":0,"reps":0,"exported":false,"created":1794410631641},"precarious-work":{"word":"precarious work","definition":"work that is insecure, badly paid or without protection","example":"[[Precarious work]] is common among gig workers.","topic":"Labour unions","box":0,"due":0,"reps":0,"exported":false,"created":1794410631642},"bogus-self-employment":{"word":"bogus self-employment","definition":"when someone is officially self-employed but really works like an employee (Scheinselbstständigkeit)","example":"Unions accuse delivery apps of [[bogus self-employment]].","topic":"Labour unions","box":0,"due":0,"reps":0,"exported":false,"created":1794410631643},"job-displacement":{"word":"job displacement","definition":"the loss of jobs because work is taken over by technology or moved elsewhere","example":"AI could cause [[job displacement]] in office work.","topic":"Labour unions","box":0,"due":0,"reps":0,"exported":false,"created":1794410631644},"automation-anxiety":{"word":"automation anxiety","definition":"workers' fear that machines or AI will replace their jobs","example":"[[Automation anxiety]] is growing among office workers.","topic":"Labour unions","box":0,"due":0,"reps":0,"exported":false,"created":1794410631645},"reskilling":{"word":"reskilling","definition":"training workers in new skills so they can do a different job","example":"Unions are demanding [[reskilling]] programmes for workers affected by AI.","topic":"Labour unions","box":0,"due":0,"reps":0,"exported":false,"created":1794410631646},"algorithmic-management":{"word":"algorithmic management","definition":"when software, not a human manager, assigns and monitors work","example":"Delivery riders are controlled by [[algorithmic management]].","topic":"Labour unions","box":0,"due":0,"reps":0,"exported":false,"created":1794410631647},"gender-pay-gap":{"word":"gender pay gap","definition":"the difference between the average earnings of men and women","example":"The [[gender pay gap]] has been widening since 2023.","topic":"Gender pay gap","box":0,"due":0,"reps":0,"exported":false,"created":1794410631648},"return-to-office-orders":{"word":"return-to-office orders","definition":"instructions from employers that staff must work in the office again","example":"[[Return-to-office orders]] put extra strain on caregivers.","topic":"Gender pay gap","box":0,"due":0,"reps":0,"exported":false,"created":1794410631649},"caregiver":{"word":"caregiver","definition":"a person who looks after a child, an elderly person or someone who is ill","example":"Many women are the main [[caregiver]] for their children or parents.","topic":"Gender pay gap","box":0,"due":0,"reps":0,"exported":false,"created":1794410631650},"untapped-potential":{"word":"untapped potential","definition":"skills or abilities that exist but are not being used","example":"Skilled women who leave the workforce represent [[untapped potential]] for the economy.","topic":"Gender pay gap","box":0,"due":0,"reps":0,"exported":false,"created":1794410631651},"churn":{"word":"churn","definition":"the rate at which workers leave jobs and need to be replaced","example":"Low pay causes high [[churn]] in the care industry.","topic":"Gender pay gap","box":0,"due":0,"reps":0,"exported":false,"created":1794410631652},"drop-out-of-the-labour-force":{"word":"drop out of the labour force","definition":"to stop working and stop looking for work","example":"When childcare is unreliable, mothers are more likely to [[drop out of the labour force]].","topic":"Gender pay gap","box":0,"due":0,"reps":0,"exported":false,"created":1794410631653},"outsized-impact":{"word":"outsized impact","definition":"an effect that is much bigger than expected","example":"The pay gap has an [[outsized impact]] on the care industry.","topic":"Gender pay gap","box":0,"due":0,"reps":0,"exported":false,"created":1794410631654},"long-run-productivity-growth":{"word":"long-run productivity growth","definition":"the increase in output per worker over many years","example":"Lower investment in children reduces [[long-run productivity growth]].","topic":"Gender pay gap","box":0,"due":0,"reps":0,"exported":false,"created":1794410631655}};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let canStore = true;
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } }
+};
+
+const WORDS_KEY = "evt.words.v1";
+const NEW_PER_SESSION = 10;
+const DAYS = {2:1, 3:3, 4:7, 5:16, 6:35};
+const QUESTIONS = {
+  "Ben Chu article": ["Is the US economy really doing as well as the headline numbers suggest?", "Who pays for tariffs in the end?"],
+  "Describing graphs": ["Describe how US inflation developed between 2020 and 2026 and what might explain it.", "Why should you be careful when you read a chart about the economy?"],
+  "Inflation & monetary policy": ["Should central banks raise interest rates even when the economy is weak?", "Why is it a problem when a central bank loses its independence?"],
+  "Fiscal policy & public finance": ["Should Germany loosen its debt brake to invest more?", "Is government borrowing always bad for an economy?"],
+  "Labour market": ["Is a tight labour market good or bad for workers?", "Will AI cause more structural unemployment?"],
+  "Labour unions": ["Do employees need labour unions more than ever because of AI and the gig economy?", "Can strong unions hurt the economy?"],
+  "Gender pay gap": ["How does the gender pay gap hurt the whole economy?", "What should governments do about the cost of childcare?"],
+};
+const FALLBACK_Q = ["What is the biggest economic challenge for Germany right now?", "Should governments do more to fight inflation?"];
+
+// ---------- data ----------
+let words = store.get(WORDS_KEY, null);
+if (!words || typeof words !== "object"){ words = JSON.parse(JSON.stringify(SEED)); }
+function save(){
+  const ok = store.set(WORDS_KEY, words);
+  if (!ok && canStore){ canStore = false; $("#noStorage").hidden = false; }
+}
+save();
+
+let topic = store.get("evt.topic", "All");
+let mode = store.get("evt.mode", "mixed");
+let view = "practice";
+
+// ---------- helpers ----------
+function list(){ return Object.entries(words).filter(([,w]) => w && w.word).map(([id,w]) => ({id, ...w})); }
+function inTopic(w){ return topic === "All" || w.topic === topic; }
+function topics(){
+  const seen = new Map();
+  list().sort((a,b) => (a.created||0)-(b.created||0)).forEach(w => { const t = w.topic || "Other"; seen.set(t, (seen.get(t)||0)+1); });
+  return seen;
+}
+function isDue(w, now=Date.now()){ return (w.box||0) > 0 && (w.due||0) <= now; }
+function slug(s){ return String(s).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60) || "w"; }
+function shuffle(a){ for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function target(ex){ const m = /\[\[(.+?)\]\]/.exec(ex||""); return m ? m[1] : null; }
+function exHTML(ex){ return esc(ex).replace(/\[\[(.+?)\]\]/g, (_,t) => `<span class="mark">${t}</span>`); }
+function clozeHTML(ex){ return esc(ex).replace(/\[\[(.+?)\]\]/g, (_,t) => `<span class="blank" aria-label="blank">${"x".repeat(Math.max(4, t.length))}</span>`); }
+function boxesHTML(b){ let h = '<span class="boxes" title="Box '+(b||0)+' of 6">'; for (let i=1;i<=6;i++) h += `<i class="${i<=(b||0)?"on":""}"></i>`; return h + "</span>"; }
+function fmtDays(d){ return d < 1 ? "10 min" : d === 1 ? "1 day" : d + " days"; }
+function norm(s){
+  return String(s||"").toLowerCase().replace(/[’‘]/g,"'").replace(/^to\s+/,"")
+    .replace(/[-‐‑–—]/g," ").replace(/labor/g,"labour").replace(/iz(e|ed|es|ing|ation)\b/g,"is$1")
+    .replace(/[^a-z0-9' ]/g," ").replace(/\s+/g," ").trim();
+}
+function lev(a,b){
+  const m=a.length,n=b.length; if (Math.abs(m-n)>3) return 9; let p=[...Array(n+1).keys()];
+  for (let i=1;i<=m;i++){ const c=[i]; for (let j=1;j<=n;j++) c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=c; }
+  return p[n];
+}
+function fixExample(ex, word){
+  ex = String(ex||"").trim(); if (!ex) return "";
+  if (/\[\[.+?\]\]/.test(ex)) return ex;
+  const re = new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"), "i");
+  return re.test(ex) ? ex.replace(re, m => `[[${m}]]`) : ex;
+}
+function uniqueId(word){ let id = slug(word), n = 2; while (words[id]) id = slug(word)+"-"+(n++); return id; }
+function addWord(word, def, ex, t, i=0){
+  const id = uniqueId(word);
+  words[id] = {word, definition: def, example: fixExample(ex, word), topic: t || "Other", box: 0, due: 0, reps: 0, exported: false, created: Date.now() + i};
+  return id;
+}
+function today(){ const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function downloadFile(name, text, type){
+  const url = URL.createObjectURL(new Blob([text], {type}));
+  const a = document.createElement("a"); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+async function copyText(text){
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch {
+    const t = document.createElement("textarea"); t.value = text; t.style.position = "fixed"; t.style.opacity = "0";
+    document.body.append(t); t.select(); let ok = false; try { ok = document.execCommand("copy"); } catch {} t.remove(); return ok;
+  }
+}
+let toastT;
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true, 3400); }
+
+// ---------- header & topics ----------
+function renderStats(){
+  const ws = list().filter(inTopic), now = Date.now();
+  $("#sDue").textContent = ws.filter(w => isDue(w,now)).length;
+  $("#sNew").textContent = ws.filter(w => !(w.box>0)).length;
+  $("#sLearned").textContent = ws.filter(w => (w.box||0) >= 4).length;
+  $("#sTotal").textContent = ws.length;
+}
+function renderTopics(){
+  const t = topics();
+  if (topic !== "All" && !t.has(topic)) topic = "All";
+  let h = `<button class="chip" data-t="All" aria-pressed="${topic==="All"}">All<span class="n">${list().length}</span></button>`;
+  t.forEach((n, name) => { h += `<button class="chip" data-t="${esc(name)}" aria-pressed="${topic===name}">${esc(name)}<span class="n">${n}</span></button>`; });
+  $("#topics").innerHTML = h;
+  $("#topicList").innerHTML = [...t.keys()].map(n => `<option value="${esc(n)}">`).join("");
+}
+$("#topics").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  topic = b.dataset.t; store.set("evt.topic", topic);
+  session = null; renderAll();
+  if (view === "use") newQuestion();
+});
+
+// ---------- views (hash routing: #practice, #words, #use, #export) ----------
+const VIEWS = ["practice","words","use","export"];
+document.querySelector("nav.tabs").addEventListener("click", e => {
+  const b = e.target.closest("button[data-view]"); if (b) location.hash = b.dataset.view;
+});
+function setView(v){
+  view = VIEWS.includes(v) ? v : "practice";
+  document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.view===view));
+  VIEWS.forEach(n => $("#v-"+n).hidden = n !== view);
+  if (view === "use" && (!useState || !useState.words.length)) newQuestion();
+  renderAll();
+}
+window.addEventListener("hashchange", () => setView(location.hash.slice(1)));
+
+// ---------- practice ----------
+let session = null;
+function buildSession(anyway=false){
+  const ws = list().filter(inTopic), now = Date.now();
+  let ids;
+  if (anyway) ids = shuffle(ws.map(w=>w.id)).slice(0, 12);
+  else {
+    const due = shuffle(ws.filter(w => isDue(w,now)).map(w=>w.id));
+    const fresh = ws.filter(w => !(w.box>0)).sort((a,b)=>(a.created||0)-(b.created||0)).slice(0, NEW_PER_SESSION).map(w=>w.id);
+    ids = due.concat(shuffle(fresh));
+  }
+  session = {queue: ids, done: 0, total: ids.length, current: null};
+  nextCard();
+}
+function pickMode(w){
+  if (mode === "def" || !target(w.example)) return "def";
+  if (mode === "cloze") return "cloze";
+  return Math.random() < .5 ? "def" : "cloze";
+}
+function nextCard(){
+  while (session.queue.length && !words[session.queue[0]]) session.queue.shift();
+  const id = session.queue.shift();
+  session.current = id || null;
+  if (id){ session.cardMode = pickMode(words[id]); session.revealed = false; session.typed = ""; session.hint = false; }
+  renderPractice(true);
+}
+function nextState(w, g){
+  const now = Date.now(); let b = w.box || 0;
+  if (g === "again") return {box:1, due: now + 10*60e3};
+  b = g === "good" ? Math.min(6, Math.max(2, b+1)) : Math.min(6, Math.max(3, b+2));
+  return {box:b, due: now + DAYS[b]*864e5};
+}
+function grade(g){
+  const id = session && session.current; if (!id || !words[id]) return;
+  const w = words[id], st = nextState(w, g);
+  Object.assign(w, {box: st.box, due: st.due, reps: (w.reps||0)+1, last: Date.now()});
+  save();
+  if (g === "again"){ session.queue.splice(Math.min(3, session.queue.length), 0, id); session.total++; }
+  session.done++;
+  renderStats();
+  nextCard();
+}
+function renderPractice(focus){
+  const el = $("#practice");
+  if (!list().length){
+    el.innerHTML = `<div class="panel empty"><h2>No words yet</h2><p class="muted">Add your first words in the Words tab, and they'll show up here for practice.</p><a class="btn primary" href="#words">Add words</a></div>`; return;
+  }
+  if (!session) buildSession();
+  if (!session.current){
+    const ws = list().filter(inTopic), now = Date.now();
+    const nextDue = ws.filter(w => w.box>0 && w.due>now).sort((a,b)=>a.due-b.due)[0];
+    const when = nextDue ? new Date(nextDue.due).toLocaleString([], {weekday:"short", hour:"2-digit", minute:"2-digit"}) : null;
+    el.innerHTML = `<div class="panel empty">
+      <h2>${session.done ? "Session done" : "Nothing due right now"}</h2>
+      <p class="muted">${session.done ? `You went through ${session.done} card${session.done===1?"":"s"}. ` : ""}${when ? `Next card is due ${esc(when)}.` : "All words in this topic are scheduled."}</p>
+      <div class="row" style="justify-content:center"><button class="btn primary" data-act="anyway">Practise 12 random words</button><button class="btn" data-act="restart">Check for due cards</button></div></div>`;
+    return;
+  }
+  const w = words[session.current], s = session;
+  const pct = s.total ? Math.round(100*s.done/s.total) : 0;
+  const tgt = target(w.example) || w.word;
+  const answer = s.cardMode === "cloze" ? tgt : w.word;
+  let verdict = "";
+  if (s.revealed && s.typed.trim()){
+    const a = norm(s.typed), ok = [norm(w.word), norm(tgt)];
+    if (ok.includes(a)) verdict = `<div class="verdict ok">Correct</div>`;
+    else if (ok.some(o => lev(a,o) <= 2)) verdict = `<div class="verdict close">Almost: check the spelling</div>`;
+    else verdict = `<div class="verdict no">You wrote “${esc(s.typed.trim())}”</div>`;
+  }
+  const iv = k => fmtDays(k==="again" ? 0 : DAYS[nextState(w,k).box]);
+  const modes = [["mixed","Mixed"],["def","Definition → word"],["cloze","Fill the gap"]];
+  el.innerHTML = `
+  <div class="stack" style="gap:12px">
+    <div class="row"><div class="chips">${modes.map(([k,l]) => `<button class="chip" data-mode="${k}" aria-pressed="${mode===k}">${l}</button>`).join("")}</div>
+      <span class="spacer"></span><span class="mono muted" style="font-size:13px">${s.done} / ${s.total}</span></div>
+    <div class="progress" aria-hidden="true"><i style="width:${pct}%"></i></div>
+    <article class="card">
+      <div class="card-top"><span class="eyebrow">${s.cardMode==="cloze"?"Fill the gap":"Definition → word"} · ${esc(w.topic||"")}</span>${boxesHTML(w.box)}</div>
+      <div class="card-body">
+        <div class="prompt">${s.cardMode==="cloze" ? clozeHTML(w.example) : esc(w.definition)}</div>
+        ${s.cardMode==="cloze" && !s.revealed ? `<div class="muted" style="font-size:14px">${esc(w.definition)}</div>` : ""}
+        ${!s.revealed ? `
+          <input type="text" id="ans" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type the word, or just think of it" aria-label="Your answer" value="${esc(s.typed)}">
+          ${s.hint ? `<div class="mono muted" style="font-size:14px">Starts with “${esc(answer[0])}” · ${answer.length} characters</div>` : ""}
+          <div class="row"><button class="btn primary" data-act="reveal">Show answer <kbd>Enter</kbd></button>${s.hint ? "" : `<button class="btn ghost" data-act="hint">Hint</button>`}</div>`
+        : `
+          ${verdict}
+          <div class="answer-word">${esc(w.word)}</div>
+          <div class="muted">${esc(w.definition)}</div>
+          ${w.example ? `<div style="font-size:15.5px">${exHTML(w.example)}</div>` : ""}
+          <div class="grades">
+            <button class="grade again" data-g="again">Again<small>1 · ${iv("again")}</small></button>
+            <button class="grade good" data-g="good">Good<small>2 · ${iv("good")}</small></button>
+            <button class="grade easy" data-g="easy">Easy<small>3 · ${iv("easy")}</small></button>
+          </div>`}
+      </div>
+    </article>
+  </div>`;
+  if (focus && !s.revealed){ const i = $("#ans"); if (i && window.matchMedia && matchMedia("(hover:hover)").matches) i.focus(); }
+}
+function reveal(){ const i=$("#ans"); session.typed = i ? i.value : ""; session.revealed = true; renderPractice(); }
+$("#practice").addEventListener("click", e => {
+  const t = e.target.closest("[data-act],[data-g],[data-mode]"); if (!t) return;
+  if (t.dataset.mode){
+    const i=$("#ans"); if (i && session) session.typed = i.value;
+    mode = t.dataset.mode; store.set("evt.mode", mode);
+    if (session && session.current && !session.revealed) session.cardMode = pickMode(words[session.current]);
+    renderPractice(); return;
+  }
+  if (t.dataset.g) return grade(t.dataset.g);
+  const a = t.dataset.act;
+  if (a === "reveal") reveal();
+  if (a === "hint"){ const i=$("#ans"); session.typed = i ? i.value : ""; session.hint = true; renderPractice(true); }
+  if (a === "anyway") buildSession(true);
+  if (a === "restart") buildSession(false);
+});
+document.addEventListener("keydown", e => {
+  if (view !== "practice" || !session || !session.current) return;
+  const inField = e.target.matches("input,textarea,select");
+  if (!session.revealed && e.key === "Enter" && (e.target.id === "ans" || !inField)){ e.preventDefault(); reveal(); }
+  else if (session.revealed && !inField){
+    const g = {"1":"again","2":"good","3":"easy","Enter":"good"}[e.key];
+    if (g){ e.preventDefault(); grade(g); }
+  }
+});
+
+// ---------- words ----------
+let openId = null, confirmDel = false;
+function renderWords(){
+  const el = $("#list"), q = norm($("#q").value);
+  const ws = list().filter(inTopic).filter(w => !q || norm(w.word+" "+w.definition).includes(q))
+    .sort((a,b) => (a.word||"").localeCompare(b.word||"", "en", {sensitivity:"base"}));
+  $("#listCount").textContent = ws.length + (ws.length===1?" word":" words");
+  if (!ws.length){ el.innerHTML = `<div class="empty"><p class="muted">${list().length ? "No words match." : "Your list is empty. Add words above."}</p></div>`; return; }
+  el.innerHTML = ws.map(w => `
+    <div class="item">
+      <button class="item-head" data-open="${esc(w.id)}" aria-expanded="${openId===w.id}">
+        <strong>${esc(w.word)}</strong>${boxesHTML(w.box)}
+        <span class="def">${esc(w.definition)}</span>
+      </button>
+      ${openId===w.id ? `<div class="editor">
+        <div class="row"><label class="f" for="eWord">Word<input type="text" id="eWord" value="${esc(w.word)}"></label>
+          <label class="f" for="eTopic">Topic<input type="text" id="eTopic" list="topicList" value="${esc(w.topic||"")}"></label></div>
+        <label class="f" for="eDef">Definition<input type="text" id="eDef" value="${esc(w.definition)}"></label>
+        <label class="f" for="eEx">Example (word in [[double brackets]])<input type="text" id="eEx" value="${esc(w.example)}"></label>
+        <div class="row"><button class="btn primary" data-save>Save</button>
+          ${confirmDel ? `<span class="muted small">Delete “${esc(w.word)}”?</span><button class="btn danger" data-del-yes>Delete</button><button class="btn ghost" data-del-no>Keep</button>`
+                       : `<button class="btn ghost" data-del>Delete</button>`}
+          <span class="spacer"></span><span class="mono muted" style="font-size:12px">${w.box>0 ? "Next: "+new Date(w.due).toLocaleDateString([], {day:"numeric", month:"short"}) : "Not practised yet"}</span></div>
+      </div>` : ""}
+    </div>`).join("");
+}
+$("#q").addEventListener("input", renderWords);
+$("#list").addEventListener("click", e => {
+  const o = e.target.closest("[data-open]");
+  if (o){ openId = openId === o.dataset.open ? null : o.dataset.open; confirmDel = false; renderWords(); return; }
+  if (!openId) return;
+  if (e.target.closest("[data-del]")){ confirmDel = true; renderWords(); return; }
+  if (e.target.closest("[data-del-no]")){ confirmDel = false; renderWords(); return; }
+  if (e.target.closest("[data-del-yes]")){
+    const name = words[openId]?.word; delete words[openId]; save(); openId = null; confirmDel = false; session = null;
+    toast(`Deleted “${name}”`); renderAll(); return;
+  }
+  if (e.target.closest("[data-save]")){
+    const word = $("#eWord").value.trim(), def = $("#eDef").value.trim();
+    if (!word || !def){ toast("A word needs both the word and a definition."); return; }
+    Object.assign(words[openId], {word, definition: def, example: fixExample($("#eEx").value, word), topic: $("#eTopic").value.trim() || "Other"});
+    save(); toast("Saved"); openId = null; renderAll();
+  }
+});
+
+// add: paste list / single word
+document.querySelector(".seg").addEventListener("click", e => {
+  const b = e.target.closest("[data-add]"); if (!b) return;
+  document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  $("#addPaste").hidden = b.dataset.add !== "paste"; $("#addSingle").hidden = b.dataset.add !== "single";
+});
+function currentTopic(input){ return input.value.trim() || (topic !== "All" ? topic : "Other"); }
+$("#copyPrompt").addEventListener("click", async () => {
+  const terms = $("#bulk").value.split("\n").map(s => s.replace(/^[\s\-•*\d.)]+/, "").trim()).filter(s => s && !s.includes("|"));
+  if (!terms.length){ toast("Type your new words first, one per line."); return; }
+  const t = currentTopic($("#bulkTopic"));
+  const prompt = `Write vocabulary flashcards for my "English for Economics" course (level B2–C1, oral exam prep). Topic: ${t}
+
+For each term, write exactly one line in this format, and nothing else:
+word | definition | example sentence
+
+Rules:
+- word: the term as given (fix typos, British spelling)
+- definition: one clear learner's-dictionary definition in English, max 20 words, without using the word itself
+- example: one natural sentence in the style of economics news, 10–22 words, containing the term exactly once in double square brackets, e.g. The central bank raised rates to [[curb]] inflation. The bracketed part may be an inflected form, e.g. [[plummeted]].
+- no numbering, no bullet points, no extra text before or after the lines
+
+Terms:
+${terms.join("\n")}`;
+  toast(await copyText(prompt) ? "Prompt copied. Paste it into Claude." : "Couldn't copy. Select the text and copy it yourself.");
+});
+$("#bulkAdd").addEventListener("click", () => {
+  const lines = $("#bulk").value.split("\n").map(s => s.trim()).filter(Boolean);
+  if (!lines.length){ toast("Paste Claude's lines first."); return; }
+  const t = currentTopic($("#bulkTopic"));
+  let added = 0, skipped = 0;
+  lines.forEach((line, i) => {
+    const parts = line.replace(/^[\-•*]\s*/, "").split(line.includes("\t") ? "\t" : "|").map(s => s.trim());
+    if (parts.length < 2 || !parts[0] || !parts[1]){ skipped++; return; }
+    addWord(parts[0], parts[1], parts.slice(2).join(" | "), t, i); added++;
+  });
+  if (added){ save(); session = null; renderAll(); }
+  $("#bulkStatus").textContent = skipped ? `${skipped} line${skipped===1?"":"s"} skipped: each line needs word | definition | sentence.` : "";
+  if (added){ toast(`Added ${added} word${added===1?"":"s"} to ${t}`); if (!skipped) $("#bulk").value = ""; }
+  else if (skipped && lines.every(l => !l.includes("|") && !l.includes("\t"))) $("#bulkStatus").textContent = "These are plain words. Click “Copy prompt for Claude” first, then paste Claude's answer here.";
+});
+$("#singleAdd").addEventListener("click", () => {
+  const word = $("#mWord").value.trim(), def = $("#mDef").value.trim();
+  if (!word || !def){ toast("Add at least the word and a definition."); return; }
+  addWord(word, def, $("#mEx").value, currentTopic($("#mTopic"))); save(); session = null;
+  ["#mWord","#mDef","#mEx"].forEach(s => $(s).value = "");
+  toast(`Added “${word}”`); renderAll();
+});
+
+// ---------- use it ----------
+let useState = null;
+function newQuestion(){
+  const ws = list().filter(inTopic);
+  const t = topic !== "All" ? topic : (ws.length ? ws[Math.floor(Math.random()*ws.length)].topic : null);
+  const qs = QUESTIONS[t] || FALLBACK_Q;
+  useState = {topic: t, q: qs[Math.floor(Math.random()*qs.length)], words: shuffle(list().filter(w => !t || w.topic === t)).slice(0,3)};
+  $("#useTopic").textContent = "Oral exam practice" + (t ? " · " + t : "");
+  $("#useQ").textContent = useState.q;
+  $("#useAns").value = "";
+  renderUseWords();
+}
+function renderUseWords(){
+  if (!useState) return;
+  const a = norm($("#useAns").value);
+  $("#useWords").innerHTML = useState.words.length
+    ? useState.words.map(w => { const tg = target(w.example); const used = a.includes(norm(w.word)) || (tg && a.includes(norm(tg)));
+        return `<span class="wordchip ${used?"used":""}" title="${esc(w.definition)}">${esc(w.word)}</span>`; }).join("")
+    : `<span class="muted">Add some words first.</span>`;
+}
+$("#useNew").addEventListener("click", newQuestion);
+$("#useAns").addEventListener("input", renderUseWords);
+$("#useCopy").addEventListener("click", async () => {
+  const ans = $("#useAns").value.trim();
+  if (!ans){ toast("Write or say your answer first."); return; }
+  const prompt = `You are my English for Economics tutor. I'm a German university student (B2–C1) practising for an oral group exam.
+
+Discussion question: ${useState.q}
+Target words I should use: ${useState.words.map(w => `${w.word} (${w.definition})`).join("; ")}
+
+My answer:
+"""${ans}"""
+
+Give short feedback in this structure:
+1. Target words: one line per word, ✓ if I used it correctly, ✗ with how to use it if missing or wrong
+2. Corrections: up to 3 lines "original → better" for my most important mistakes
+3. Stronger version: my answer rewritten at C1 level, max 80 words, keeping my opinion and using all target words
+4. One tip for sounding convincing in the discussion`;
+  toast(await copyText(prompt) ? "Copied. Paste it into Claude for feedback." : "Couldn't copy. Select the text and copy it yourself.");
+});
+// speech (Chrome, Edge)
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, listening = false;
+if (SR){
+  $("#micBtn").hidden = false;
+  $("#micBtn").addEventListener("click", () => {
+    if (listening){ rec && rec.stop(); return; }
+    rec = new SR(); rec.lang = "en-GB"; rec.continuous = true; rec.interimResults = true;
+    rec.onstart = () => { listening = true; $("#micBtn").setAttribute("aria-pressed","true"); $("#micBtn").textContent = "Stop speaking"; };
+    rec.onend = () => { listening = false; $("#micBtn").setAttribute("aria-pressed","false"); $("#micBtn").textContent = "Speak"; $("#interim").textContent = ""; };
+    rec.onerror = e => {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed"){ $("#micBtn").hidden = true; toast("Microphone not allowed. You can still type your answer."); }
+      else if (e.error !== "no-speech" && e.error !== "aborted") toast("Speech recognition stopped. Try again.");
+    };
+    rec.onresult = e => {
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++){
+        const r = e.results[i];
+        if (r.isFinal){ const a = $("#useAns"); a.value = (a.value && !/\s$/.test(a.value) ? a.value + " " : a.value) + r[0].transcript.trim(); renderUseWords(); }
+        else interim += r[0].transcript;
+      }
+      $("#interim").textContent = interim;
+    };
+    try { rec.start(); } catch { toast("Couldn't start the microphone."); }
+  });
+}
+
+// ---------- export ----------
+["deckName","ntBasic","ntCloze"].forEach(id => { const v = store.get("evt."+id, null); if (v) $("#"+id).value = v; $("#"+id).addEventListener("change", e => store.set("evt."+id, e.target.value)); });
+function exportSet(){ return list().filter(inTopic).filter(w => !$("#onlyNew").checked || !w.exported); }
+function renderExport(){
+  const n = exportSet().length, per = ($("#exBasic").checked?1:0) + ($("#exCloze").checked?1:0);
+  $("#exportCount").textContent = `${n} word${n===1?"":"s"} · ${n*per} notes${topic!=="All" ? " · topic: "+topic : ""}`;
+  $("#exportBtn").disabled = !n || !per;
+}
+["onlyNew","exBasic","exCloze"].forEach(id => $("#"+id).addEventListener("change", renderExport));
+$("#exportBtn").addEventListener("click", () => {
+  const ws = exportSet(); if (!ws.length) return;
+  const clean = s => String(s||"").replace(/[\t\r\n]+/g, " ").trim();
+  const deck = clean($("#deckName").value) || "English for Economics";
+  const nb = clean($("#ntBasic").value) || "Basic", nc = clean($("#ntCloze").value) || "Cloze";
+  const lines = ["#separator:tab", "#html:false", "#notetype column:1", "#deck column:2", "#tags column:5"];
+  ws.forEach(w => {
+    const tag = "EnglishEcon::" + String(w.topic||"Other").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "");
+    if ($("#exBasic").checked) lines.push([nb, deck, clean(w.definition), clean(w.word), tag].join("\t"));
+    if ($("#exCloze").checked && target(w.example)) lines.push([nc, deck, clean(w.example).replace(/\[\[(.+?)\]\]/g, "{{c1::$1}}"), clean(w.definition), tag].join("\t"));
+  });
+  downloadFile(`anki-econ-vocab-${today()}.txt`, lines.join("\n") + "\n", "text/plain;charset=utf-8");
+  ws.forEach(w => { words[w.id].exported = true; }); save();
+  toast(`Exported ${ws.length} word${ws.length===1?"":"s"}`); renderExport();
+});
+
+// ---------- backup ----------
+$("#backupBtn").addEventListener("click", () => {
+  downloadFile(`econ-vocab-backup-${today()}.json`, JSON.stringify({app: "econ-vocab-trainer", version: 1, saved: new Date().toISOString(), words}, null, 1), "application/json");
+  toast("Backup downloaded");
+});
+let pending = null;
+$("#restoreFile").addEventListener("change", e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const data = JSON.parse(r.result);
+      const w = data && data.words;
+      if (!w || typeof w !== "object" || !Object.values(w).some(x => x && x.word)) throw 0;
+      pending = w;
+      const n = Object.values(w).filter(x => x && x.word).length;
+      $("#restoreMsg").textContent = `Replace your ${list().length} words and progress with the ${n} words from this backup?`;
+      $("#restoreConfirm").hidden = false;
+    } catch { toast("That file isn't a backup from this app."); }
+  };
+  r.readAsText(f);
+});
+$("#restoreNo").addEventListener("click", () => { pending = null; $("#restoreConfirm").hidden = true; });
+$("#restoreYes").addEventListener("click", () => {
+  if (!pending) return; words = pending; pending = null; save(); session = null; useState = null;
+  $("#restoreConfirm").hidden = true; toast("Backup loaded"); renderAll();
+});
+
+function renderAll(){
+  renderTopics(); renderStats();
+  if (view === "practice") renderPractice();
+  if (view === "words") renderWords();
+  if (view === "use") { if (!useState) newQuestion(); else renderUseWords(); }
+  if (view === "export") renderExport();
+}
+setView(location.hash.slice(1));
+})();
+</script>
+</body>
+</html>
